@@ -9,3 +9,4 @@ def configure(cnf):
 
 def build(bld):
     bld.shlib(use="GLIB-2.0", source="example.c", target="example")
+    bld.program(use="example", source="test.c", target="test")
