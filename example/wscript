@@ -6,7 +6,10 @@ def options(opt):
 def configure(cnf):
     cnf.load("compiler_c")
     cnf.check_cfg(package="glib-2.0", args='--cflags --libs')
+    cnf.load("gir", tooldir="..")
 
 def build(bld):
     bld.shlib(use="GLIB-2.0", source="example.c", target="example")
+    bld(features="gir", lib="example",
+            scan="example.h", namespace="Example")
     bld.program(use="example", source="test.c", target="test")
