@@ -27,9 +27,10 @@ def configure(cnf):
     env = cnf.env
     env.GIRLIB_T = '-l%s'      # template passing library to scanner
     env.GIRPATH_T = '-L%s'  # template passing library search path to scanner
+    cnf.env.append_value("GIRSCANNERFLAGS", "--warn-all")
 
 class girscan(Task):
-    run_str = "${G_IR_SCANNER} --no-libtool " \
+    run_str = "${G_IR_SCANNER} --no-libtool ${GIRSCANNERFLAGS} " \
             "${GIRLIB_T:GIRLIB} ${GIRPATH_T:GIRPATH} " \
             "--namespace=${NAMESPACE} --nsversion=${VERSION} " \
             "--output ${TGT} ${SRC}"
