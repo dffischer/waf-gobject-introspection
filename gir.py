@@ -29,11 +29,15 @@ def configure(cnf):
     env.GIRPATH_T = '-L%s'  # template passing library search path to scanner
     cnf.env.append_value("GIRSCANNERFLAGS", "--warn-all")
 
-class girscan(Task):
+class gir(Task):
     run_str = "${G_IR_SCANNER} --no-libtool ${GIRSCANNERFLAGS} " \
             "${GIRLIB_T:GIRLIB} ${GIRPATH_T:GIRPATH} " \
             "--namespace=${NAMESPACE} --nsversion=${VERSION} " \
             "--output ${TGT} ${SRC}"
+
+    @staticmethod
+    def keyword():
+        return "Scanning"
 
 @feature("gir")
 def process_gir(gen):
@@ -42,7 +46,7 @@ def process_gir(gen):
         raise WafError(f"Missing namespace for gir feature in {gen}")
     version = str(getattr(gen, "version", 0))
 
-    scan_task = gen.create_task('girscan',
+    scan_task = gen.create_task('gir',
             tgt=gen.path.find_or_declare(f"{namespace}-{version}.gir"),
             src=gen.to_nodes(getattr(gen, "scan", [])))
     env = scan_task.env
