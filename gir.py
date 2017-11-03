@@ -24,6 +24,7 @@ from waflib.Errors import WafError
 
 def configure(cnf):
     cnf.find_program("g-ir-scanner")
+    cnf.find_program("g-ir-compiler")
     env = cnf.env
     env.GIRLIB_T = '-l%s'      # template passing library to scanner
     env.GIRPATH_T = '-L%s'  # template passing library search path to scanner
@@ -39,15 +40,18 @@ class gir(Task):
     def keyword():
         return "Scanning"
 
+class gircompile(Task):
+    run_str = "${G_IR_COMPILER} -o ${TGT} ${SRC}"
+
 @feature("gir")
 def process_gir(gen):
     namespace = getattr(gen, "namespace", None)
     if not namespace:
         raise WafError(f"Missing namespace for gir feature in {gen}")
     version = str(getattr(gen, "version", 0))
+    gir = gen.path.find_or_declare(f"{namespace}-{version}.gir")
 
-    scan_task = gen.create_task('gir',
-            tgt=gen.path.find_or_declare(f"{namespace}-{version}.gir"),
+    scan_task = gen.create_task('gir', tgt=gir,
             src=gen.to_nodes(getattr(gen, "scan", [])))
     env = scan_task.env
     env.NAMESPACE = namespace
@@ -62,3 +66,5 @@ def process_gir(gen):
     scan_task.dep_nodes.extend(lib_task.outputs)
     env.append_unique('GIRPATH', [
         lib_task.outputs[0].parent.path_from(gen.path)])
+
+    gen.create_task('gircompile', gir, gir.change_ext('.typelib'))
