@@ -9,7 +9,6 @@ def configure(cnf):
     cnf.load("gir", tooldir="..")
 
 def build(bld):
-    bld(features="c cshlib gir", use="GLIB-2.0",
-            source="example.c", target="example",
-            scan="example.h", namespace="Example")
+    bld(features="c cshlib gir", use="GLIB-2.0", scan="example.h",
+            source="example.c", target="example")
     bld.program(use="example", source="test.c", target="test")

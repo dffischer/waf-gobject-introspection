@@ -17,14 +17,14 @@ references the target library.
                 source="object.c",  # main code to be compiled
                 target="object",
                 scan="object.h",  # header files for the g-ir-scanner
-                namespace="Object",
+                namespace="Object",  # by default capitalized first header name
                 version=1)  # defaults to 0
 
 or
 
         bld(features="c cshlib",  # library compilation
                 source="object.c", target="object", use="GLIB2")
-        bld(features="gir", namespace="Object",
+        bld(features="gir",
                 lib="object",  # library to introspect
                 scan="object.h")  # header files to scan
 """
@@ -32,6 +32,7 @@ or
 from waflib.TaskGen import feature, after_method
 from waflib.Task import Task
 from waflib.Errors import WafError
+from operator import methodcaller
 
 def configure(cnf):
     cnf.find_program("g-ir-scanner")
@@ -57,14 +58,13 @@ class gircompile(Task):
 @feature("gir")
 @after_method('apply_link')
 def process_gir(gen):
-    namespace = getattr(gen, "namespace", None)
-    if not namespace:
-        raise WafError(f"Missing namespace for gir feature in {gen}")
+    scan = gen.to_nodes(getattr(gen, "scan", []))
+    namespace = getattr(gen, "namespace", None) or \
+        ''.join(map(methodcaller('capitalize'), scan[0].name[:-2].split('_')))
     version = str(getattr(gen, "version", 0))
     gir = gen.path.find_or_declare(f"{namespace}-{version}.gir")
 
-    scan_task = gen.create_task('gir', tgt=gir,
-            src=gen.to_nodes(getattr(gen, "scan", [])))
+    scan_task = gen.create_task('gir', tgt=gir, src=scan)
     env = scan_task.env
     env.NAMESPACE = namespace
     env.VERSION = version
