@@ -58,16 +58,6 @@ class gircompile(Task):
 @feature("gir")
 @after_method('apply_link')
 def process_gir(gen):
-    scan = gen.to_nodes(getattr(gen, "scan", []))
-    namespace = getattr(gen, "namespace", None) or \
-        ''.join(map(methodcaller('capitalize'), scan[0].name[:-2].split('_')))
-    version = str(getattr(gen, "version", 0))
-    gir = gen.path.find_or_declare(f"{namespace}-{version}.gir")
-
-    scan_task = gen.create_task('gir', tgt=gir, src=scan)
-    env = scan_task.env
-    env.NAMESPACE = namespace
-    env.VERSION = version
 
     lib = getattr(gen, "lib", None)
     if lib:
@@ -79,6 +69,18 @@ def process_gir(gen):
             raise WafError(f"{gen} lacks a library to introspect "
                     "and does not build one itself")
         lib_gen = gen
+
+    scan = gen.to_nodes(getattr(gen, "scan", []))
+    namespace = getattr(gen, "namespace", None) or \
+        ''.join(map(methodcaller('capitalize'), scan[0].name[:-2].split('_')))
+    version = str(getattr(gen, "version", 0))
+    gir = gen.path.find_or_declare(f"{namespace}-{version}.gir")
+
+    scan_task = gen.create_task('gir', tgt=gir, src=scan)
+    env = scan_task.env
+    env.NAMESPACE = namespace
+    env.VERSION = version
+
     env.append_value('GIRLIB', [lib_gen.target])
     scan_task.dep_nodes.extend(lib_task.outputs)
     env.append_unique('GIRPATH', [
