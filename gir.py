@@ -27,6 +27,9 @@ or
         bld(features="gir",
                 lib="object",  # library to introspect
                 scan="object.h")  # header files to scan
+
+If the scan parameter is left out, one header is assumed with the same base
+name as the library.
 """
 
 from waflib.TaskGen import feature, after_method
@@ -58,6 +61,7 @@ class gircompile(Task):
 @feature("gir")
 @after_method('apply_link')
 def process_gir(gen):
+    scan = gen.to_nodes(getattr(gen, "scan", []))
 
     lib = getattr(gen, "lib", None)
     if lib:
@@ -70,7 +74,8 @@ def process_gir(gen):
                     "and does not build one itself")
         lib_gen = gen
 
-    scan = gen.to_nodes(getattr(gen, "scan", []))
+    if not scan:
+        scan = gen.to_nodes([f"{lib_gen.target}.h"])
     namespace = getattr(gen, "namespace", None) or \
         ''.join(map(methodcaller('capitalize'), scan[0].name[:-2].split('_')))
     version = str(getattr(gen, "version", 0))
