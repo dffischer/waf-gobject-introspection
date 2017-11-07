@@ -29,7 +29,9 @@ or
                 scan="object.h")  # header files to scan
 
 If the scan parameter is left out, one header is assumed with the same base
-name as the library.
+name as the library. The lib parameter can be left out when the task generator
+already builds a library to use or the basename of the first header in a
+present scan parameter designates the library name.
 """
 
 from waflib.TaskGen import feature, after_method
@@ -69,10 +71,16 @@ def process_gir(gen):
         lib_task = lib_gen.link_task
     else:
         lib_task = getattr(gen, 'link_task', None)
-        if not lib_task:
-            raise WafError(f"{gen} lacks a library to introspect "
-                    "and does not build one itself")
-        lib_gen = gen
+        if lib_task:
+            lib_gen = gen
+        else:
+            try:
+                lib_gen = gen.bld.get_tgen_by_name(
+                        scan[0].name.rpartition('.')[0])
+            except IndexError:
+                raise WafError(f"{gen} lacks a library to introspect "
+                        "and does not build one itself")
+            lib_task = lib_gen.link_task
 
     if not scan:
         scan = gen.to_nodes([f"{lib_gen.target}.h"])
