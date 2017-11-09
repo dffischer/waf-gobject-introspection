@@ -38,6 +38,7 @@ from waflib.TaskGen import feature, after_method
 from waflib.Task import Task
 from waflib.Errors import WafError
 from operator import methodcaller
+from os.path import join
 
 def configure(cnf):
     cnf.find_program("g-ir-scanner")
@@ -46,6 +47,8 @@ def configure(cnf):
     env.GIRLIB_T = '-l%s'      # template passing library to scanner
     env.GIRPATH_T = '-L%s'  # template passing library search path to scanner
     cnf.env.append_value("GIRSCANNERFLAGS", "--warn-all")
+
+    cnf.load('gnu_dirs')
 
 class gir(Task):
     run_str = "${G_IR_SCANNER} --no-libtool ${GIRSCANNERFLAGS} " \
@@ -99,4 +102,8 @@ def process_gir(gen):
     env.append_unique('GIRPATH', [
         lib_task.outputs[0].parent.path_from(gen.path)])
 
-    gen.create_task('gircompile', gir, gir.change_ext('.typelib'))
+    gen.add_install_files(install_to=join(env.DATAROOTDIR, "gir-1.0"),
+            install_from=scan_task.outputs)
+    gen.add_install_files(install_to=join(env.LIBDIR, "girepository-1.0"),
+            install_from=gen.create_task('gircompile', gir,
+                gir.change_ext('.typelib')).outputs)
