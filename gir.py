@@ -9,6 +9,9 @@ mandatory parameters can simply be added to a generator creating a shared
 library from c sources or used to create a separate task generator that
 references the target library.
 
+    def options(opt):
+        opt.load("gir")
+
     def configure(cnf):
         cnf.load("gir")
 
@@ -32,13 +35,26 @@ If the scan parameter is left out, one header is assumed with the same base
 name as the library. The lib parameter can be left out when the task generator
 already builds a library to use or the basename of the first header in a
 present scan parameter designates the library name.
+
+Installation paths can be configured as known from the gnu_dirs package. To do
+so, the gir tool has to be loaded also in the options function.
 """
 
 from waflib.TaskGen import feature, after_method
 from waflib.Task import Task
 from waflib.Errors import WafError
+from waflib.Utils import subst_vars
 from operator import methodcaller
 from os.path import join
+
+def options(opt):
+    opt.load('gnu_dirs')
+
+    group = opt.get_option_group("Installation directories")
+    group.add_option("--girdir",
+            help="GIR XML repository [DATAROOTDIR/gir-1.0]")
+    group.add_option("--typelibdir",
+            help="compiled GIR typelibs [LIBDIR/girepository-1.0]")
 
 def configure(cnf):
     cnf.find_program("g-ir-scanner")
@@ -49,6 +65,10 @@ def configure(cnf):
     cnf.env.append_value("GIRSCANNERFLAGS", "--warn-all")
 
     cnf.load('gnu_dirs')
+    env.GIRDIR = subst_vars(cnf.options.girdir or
+            join("${DATAROOTDIR}", "gir-1.0"), env)
+    env.TYPELIBDIR = subst_vars(cnf.options.typelibdir or
+            join("${LIBDIR}", "girepository-1.0"), env)
 
 class gir(Task):
     run_str = "${G_IR_SCANNER} --no-libtool ${GIRSCANNERFLAGS} " \
@@ -102,8 +122,8 @@ def process_gir(gen):
     env.append_unique('GIRPATH', [
         lib_task.outputs[0].parent.path_from(gen.path)])
 
-    gen.add_install_files(install_to=join(env.DATAROOTDIR, "gir-1.0"),
+    gen.add_install_files(install_to=env.GIRDIR,
             install_from=scan_task.outputs)
-    gen.add_install_files(install_to=join(env.LIBDIR, "girepository-1.0"),
+    gen.add_install_files(install_to=env.TYPELIBDIR,
             install_from=gen.create_task('gircompile', gir,
                 gir.change_ext('.typelib')).outputs)
