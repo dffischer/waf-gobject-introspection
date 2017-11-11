@@ -20,6 +20,7 @@ references the target library.
                 source="object.c",  # main code to be compiled
                 target="object",
                 scan="object.h",  # header files for the g-ir-scanner
+                include="GLib-2.0",  # GIR repositories to depend upon
                 namespace="Object",  # by default capitalized first header name
                 version=1)  # defaults to 0
 
@@ -62,6 +63,7 @@ def configure(cnf):
     env = cnf.env
     env.GIRLIB_T = '-l%s'      # template passing library to scanner
     env.GIRPATH_T = '-L%s'  # template passing library search path to scanner
+    env.GIRINC_T = '--include=%s'  # template including other GIR repositories
     cnf.env.append_value("GIRSCANNERFLAGS", "--warn-all")
 
     cnf.load('gnu_dirs')
@@ -72,7 +74,7 @@ def configure(cnf):
 
 class gir(Task):
     run_str = "${G_IR_SCANNER} --no-libtool ${GIRSCANNERFLAGS} " \
-            "${GIRLIB_T:GIRLIB} ${GIRPATH_T:GIRPATH} " \
+            "${GIRLIB_T:GIRLIB} ${GIRPATH_T:GIRPATH} ${GIRINC_T:GIRINC} " \
             "--namespace=${NAMESPACE} --nsversion=${VERSION} " \
             "--output ${TGT} ${SRC}"
 
@@ -121,6 +123,8 @@ def process_gir(gen):
     scan_task.dep_nodes.extend(lib_task.outputs)
     env.append_unique('GIRPATH', [
         lib_task.outputs[0].parent.path_from(gen.path)])
+
+    env.append_value('GIRINC', gen.to_list(getattr(gen, "include", [])))
 
     gen.add_install_files(install_to=env.GIRDIR,
             install_from=scan_task.outputs)
