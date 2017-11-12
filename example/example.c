@@ -1,6 +1,5 @@
 #include "example.h"
-#include <stdio.h>
 
-void example_greet(char *gretee) {
-  printf("Hello, %s!\n", gretee);
+void example_greet(gchar *gretee) {
+  g_printf("Hello, %s!\n", gretee);
 }
