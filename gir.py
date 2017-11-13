@@ -14,13 +14,14 @@ references the target library.
 
     def configure(cnf):
         cnf.load("gir")
+        cnf.check_gir("GLib-2.0", "GLIB")
 
     def build(bld):
         bld(features="c cshlib gir",
                 source="object.c",  # main code to be compiled
                 target="object",
                 scan="object.h",  # header files for the g-ir-scanner
-                include="GLib-2.0",  # GIR repositories to depend upon
+                include="GLIB",  # GIR repositories to depend upon
                 namespace="Object",  # by default capitalized first header name
                 version=1)  # defaults to 0
 
@@ -37,6 +38,9 @@ name as the library. The lib parameter can be left out when the task generator
 already builds a library to use or the basename of the first header in a
 present scan parameter designates the library name.
 
+Other GIR repositories to depend upon are configured similar to the check_cfg
+function known from c projects.
+
 Installation paths can be configured as known from the gnu_dirs package. To do
 so, the gir tool has to be loaded also in the options function.
 """
@@ -44,6 +48,7 @@ so, the gir tool has to be loaded also in the options function.
 from waflib.TaskGen import feature, after_method
 from waflib.Task import Task
 from waflib.Errors import WafError
+from waflib.Configure import conf
 from waflib.Utils import subst_vars
 from operator import methodcaller
 from os.path import join
@@ -56,6 +61,20 @@ def options(opt):
             help="GIR XML repository [DATAROOTDIR/gir-1.0]")
     group.add_option("--typelibdir",
             help="compiled GIR typelibs [LIBDIR/girepository-1.0]")
+
+@conf
+def check_gir(cnf, gir, store):
+    cnf.start_msg(f"Checking for GIR XML {gir}")
+    girpath = getattr(cnf, 'girpath', None)
+    if not girpath:
+        girpath = cnf.girpath = cnf.root.find_node(cnf.env.GIRDIR)
+
+    f = cnf.girpath.find_resource(gir + '.gir')
+    if not f:
+        cnf.end_msg("not found", 'YELLOW')
+        cnf.fatal('The configuration failed')
+    cnf.env.append_value(f'GIRINC_{store}', (gir, ))
+    cnf.end_msg(f.abspath())
 
 def configure(cnf):
     cnf.find_program("g-ir-scanner")
@@ -124,7 +143,8 @@ def process_gir(gen):
     env.append_unique('GIRPATH', [
         lib_task.outputs[0].parent.path_from(gen.path)])
 
-    env.append_value('GIRINC', gen.to_list(getattr(gen, "include", [])))
+    for include in gen.to_list(getattr(gen, "include", [])):
+        env.append_value('GIRINC', env[f'GIRINC_{include}'])
 
     gen.add_install_files(install_to=env.GIRDIR,
             install_from=scan_task.outputs)

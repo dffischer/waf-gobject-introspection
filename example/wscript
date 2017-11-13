@@ -8,9 +8,10 @@ def configure(cnf):
     cnf.load("compiler_c")
     cnf.check_cfg(package="glib-2.0", args='--cflags --libs')
     cnf.load("gir", tooldir="..")
+    cnf.check_gir('GLib-2.0', 'GLIB_GIR')
 
 def build(bld):
     bld(features="c cshlib gir",
-            use="GLIB-2.0", include="GLib-2.0",
+            use="GLIB-2.0", include="GLIB_GIR",
             source="example.c", target="example")
     bld.program(use="example", source="test.c", target="test")
