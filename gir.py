@@ -14,7 +14,8 @@ references the target library.
 
     def configure(cnf):
         cnf.load("gir")
-        cnf.check_gir("GLib-2.0", "GLIB")
+        cnf.check_gir("GLib-2.0",
+            store="GLIB")  # defaults to upper cased package name
 
     def build(bld):
         bld(features="c cshlib gir",
@@ -63,11 +64,14 @@ def options(opt):
             help="compiled GIR typelibs [LIBDIR/girepository-1.0]")
 
 @conf
-def check_gir(cnf, gir, store):
+def check_gir(cnf, gir, store=None):
     cnf.start_msg(f"Checking for GIR XML {gir}")
     girpath = getattr(cnf, 'girpath', None)
     if not girpath:
         girpath = cnf.girpath = cnf.root.find_node(cnf.env.GIRDIR)
+
+    if not store:
+        store = gir.upper()
 
     f = cnf.girpath.find_resource(gir + '.gir')
     if not f:
