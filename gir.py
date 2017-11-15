@@ -42,8 +42,9 @@ present scan parameter designates the library name.
 Other GIR repositories to depend upon are configured similar to the check_cfg
 function known from c projects.
 
-Installation paths can be configured as known from the gnu_dirs package. To do
-so, the gir tool has to be loaded also in the options function.
+Installation paths and the location to lookup GIR XML descriptions can be
+configured as known from the gnu_dirs package. To do so, the gir tool has to be
+loaded also in the options function.
 """
 
 from waflib.TaskGen import feature, after_method
@@ -63,12 +64,16 @@ def options(opt):
     group.add_option("--typelibdir",
             help="compiled GIR typelibs [LIBDIR/girepository-1.0]")
 
+    group = opt.get_option_group("Configuration options")
+    group.add_option("--girsearchpath",
+            help="path to lookup GIR repository XML [GIRDIR]")
+
 @conf
 def check_gir(cnf, gir, store=None):
     cnf.start_msg(f"Checking for GIR XML {gir}")
     girpath = getattr(cnf, 'girpath', None)
     if not girpath:
-        girpath = cnf.girpath = cnf.root.find_node(cnf.env.GIRDIR)
+        girpath = cnf.girpath = cnf.root.find_node(cnf.env.GIRSEARCHPATH)
 
     if not store:
         store = gir.upper()
@@ -94,6 +99,7 @@ def configure(cnf):
             join("${DATAROOTDIR}", "gir-1.0"), env)
     env.TYPELIBDIR = subst_vars(cnf.options.typelibdir or
             join("${LIBDIR}", "girepository-1.0"), env)
+    env.GIRSEARCHPATH = subst_vars(cnf.options.typelibdir or "${GIRDIR}", env)
 
 class gir(Task):
     run_str = "${G_IR_SCANNER} --no-libtool ${GIRSCANNERFLAGS} " \
