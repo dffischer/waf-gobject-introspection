@@ -54,6 +54,7 @@ from waflib.Configure import conf
 from waflib.Utils import subst_vars
 from operator import methodcaller
 from os.path import join
+from xml.etree.ElementTree import fromstring
 
 def options(opt):
     opt.load('gnu_dirs')
@@ -67,6 +68,8 @@ def options(opt):
     group = opt.get_option_group("Configuration options")
     group.add_option("--girsearchpath",
             help="path to lookup GIR repository XML [GIRDIR]")
+
+GIR_NAMESPACE = '{http://www.gtk.org/introspection/core/1.0}'
 
 @conf
 def check_gir(cnf, gir, store=None):
@@ -83,7 +86,11 @@ def check_gir(cnf, gir, store=None):
         cnf.end_msg("not found", 'YELLOW')
         cnf.fatal('The configuration failed')
     cnf.env.append_value(f'GIRINC_{store}', (gir, ))
+    recursive = fromstring(f.read()).findall(GIR_NAMESPACE + 'include')
     cnf.end_msg(f.abspath())
+
+    for recurse in recursive:
+        cnf.check_gir('{name}-{version}'.format(**recurse.attrib))
 
 def configure(cnf):
     cnf.find_program("g-ir-scanner")
