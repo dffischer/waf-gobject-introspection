@@ -40,7 +40,8 @@ already builds a library to use or the basename of the first header in a
 present scan parameter designates the library name.
 
 Other GIR repositories to depend upon are configured similar to the check_cfg
-function known from c projects.
+function known from c projects. The underlying libraries will automatically be
+checked, too.
 
 Installation paths and the location to lookup GIR XML descriptions can be
 configured as known from the gnu_dirs package. To do so, the gir tool has to be
@@ -86,9 +87,14 @@ def check_gir(cnf, gir, store=None):
         cnf.end_msg("not found", 'YELLOW')
         cnf.fatal('The configuration failed')
     cnf.env.append_value(f'GIRINC_{store}', (gir, ))
-    recursive = fromstring(f.read()).findall(GIR_NAMESPACE + 'include')
+    xml = fromstring(f.read())
+    packages = tuple(include.get('name') for include
+            in xml.iterfind(GIR_NAMESPACE + 'package'))
+    recursive = xml.findall(GIR_NAMESPACE + 'include')
     cnf.end_msg(f.abspath())
 
+    for package in packages:
+        cnf.check_cfg(package=package, args='--cflags --libs')
     for recurse in recursive:
         cnf.check_gir('{name}-{version}'.format(**recurse.attrib))
 
