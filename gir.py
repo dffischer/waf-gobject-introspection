@@ -41,14 +41,15 @@ present scan parameter designates the library name.
 
 Other GIR repositories to depend upon are configured similar to the check_cfg
 function known from c projects. The underlying libraries will automatically be
-checked, too.
+checked, too, and added to the uselib parameter of any generator that utilizes
+a GIR include parameter.
 
 Installation paths and the location to lookup GIR XML descriptions can be
 configured as known from the gnu_dirs package. To do so, the gir tool has to be
 loaded also in the options function.
 """
 
-from waflib.TaskGen import feature, after_method
+from waflib.TaskGen import feature, before_method, after_method
 from waflib.Task import Task
 from waflib.Errors import WafError
 from waflib.Configure import conf
@@ -90,6 +91,8 @@ def check_gir(cnf, gir, store=None):
     xml = fromstring(f.read())
     packages = tuple(include.get('name') for include
             in xml.iterfind(GIR_NAMESPACE + 'package'))
+    cnf.env.append_value(f'GIRUSE_{store}',
+            map(methodcaller('upper'), packages))
     recursive = xml.findall(GIR_NAMESPACE + 'include')
     cnf.end_msg(f.abspath())
 
@@ -129,6 +132,7 @@ class gircompile(Task):
 
 @feature("gir")
 @after_method('apply_link')
+@before_method('process_use')
 def process_gir(gen):
     scan = gen.to_nodes(getattr(gen, "scan", []))
 
@@ -174,3 +178,10 @@ def process_gir(gen):
     gen.add_install_files(install_to=env.TYPELIBDIR,
             install_from=gen.create_task('gircompile', gir,
                 gir.change_ext('.typelib')).outputs)
+
+    try:
+        use = gen.to_list(gen.use)
+    except AttributeError:
+        use = gen.use = []
+    for include in gen.to_list(getattr(gen, "include", [])):
+        use.extend(gen.env[f'GIRUSE_{include}'])
