@@ -79,6 +79,7 @@ def check_gir(cnf, gir, store=None):
     girpath = getattr(cnf, 'girpath', None)
     if not girpath:
         girpath = cnf.girpath = cnf.root.find_node(cnf.env.GIRSEARCHPATH)
+    env = cnf.env
 
     if not store:
         store = gir.upper()
@@ -87,11 +88,11 @@ def check_gir(cnf, gir, store=None):
     if not f:
         cnf.end_msg("not found", 'YELLOW')
         cnf.fatal('The configuration failed')
-    cnf.env.append_value(f'GIRINC_{store}', (gir, ))
+    env.append_value(f'GIRINC_{store}', (gir, ))
     xml = fromstring(f.read())
     packages = tuple(include.get('name') for include
             in xml.iterfind(GIR_NAMESPACE + 'package'))
-    cnf.env.append_value(f'GIRUSE_{store}',
+    env.append_value(f'GIRUSE_{store}',
             map(methodcaller('upper'), packages))
     recursive = xml.findall(GIR_NAMESPACE + 'include')
     cnf.end_msg(f.abspath())
