@@ -15,24 +15,24 @@ references the target library.
     def configure(cnf):
         cnf.load("gir")
         cnf.check_gir("GLib-2.0",
-            store="GLIB")  # defaults to upper cased package name
+            store="GLIB")            # defaults to upper cased package name
 
     def build(bld):
         bld(features="c cshlib gir",
-                source="object.c",  # main code to be compiled
+                source="object.c",   # main code to be compiled
                 target="object",
-                scan="object.h",  # header files for the g-ir-scanner
-                include="GLIB",  # GIR repositories to depend upon
+                scan="object.h",     # header files for the g-ir-scanner
+                include="GLIB",      # GIR repositories to depend upon
                 namespace="Object",  # by default capitalized first header name
-                version=1)  # defaults to 0
+                version=1)           # defaults to 0
 
 or
 
-        bld(features="c cshlib",  # library compilation
+        bld(features="c cshlib",     # library compilation
                 source="object.c", target="object", use="GLIB2")
         bld(features="gir",
-                lib="object",  # library to introspect
-                scan="object.h")  # header files to scan
+                lib="object",        # library to introspect
+                scan="object.h")     # header files to scan
 
 If the scan parameter is left out, one header is assumed with the same base
 name as the library. The lib parameter can be left out when the task generator
@@ -106,8 +106,8 @@ def configure(cnf):
     cnf.find_program("g-ir-scanner")
     cnf.find_program("g-ir-compiler")
     env = cnf.env
-    env.GIRLIB_T = '-l%s'      # template passing library to scanner
-    env.GIRPATH_T = '-L%s'  # template passing library search path to scanner
+    env.GIRLIB_T = '-l%s'          # template passing library to scanner
+    env.GIRPATH_T = '-L%s'         # template passing library search path
     env.GIRINC_T = '--include=%s'  # template including other GIR repositories
     cnf.env.append_value("GIRSCANNERFLAGS", "--warn-all")
 
