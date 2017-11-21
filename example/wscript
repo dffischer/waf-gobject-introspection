@@ -13,3 +13,4 @@ def build(bld):
     bld(features="c cshlib gir", include="GLIB-2.0",
             source="example.c", target="example")
     bld.program(use="example", source="test.c", target="test")
+    bld.install_files(bld.env.BINDIR, "test.js", chmod=0o755)
