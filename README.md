@@ -21,3 +21,5 @@ git clone https://github.com/dffischer/waf-gobject-introspection
 ./waf-light configure --prefix=/usr \
   build --make-waf --tools='waf-gnome-shell-extension/gir.py'
 ```
+
+To make it available to a system-wide waf installation, the included waf script can be used to place it into the waf library.
